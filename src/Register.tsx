@@ -5,6 +5,36 @@ import { FiInfo } from "react-icons/fi";
 
 const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+
+interface RegisterPayload {
+  username: string;
+  email: string;
+  password: string;
+}
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  created_at: string; // ISO date string
+  updated_at: string;
+  last_login_at: string | null;
+  is_active: 0 | 1; // or boolean, depending on your DB
+  is_verified: 0 | 1;
+  role: "user" | "admin"; // adjust as needed
+  facebook_id: string | null;
+  google_id: string | null;
+}
+
+interface RegisterResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: User;
+}
 
 const Register = () => {
   const userRef = useRef<HTMLInputElement>(null);
@@ -13,6 +43,10 @@ const Register = () => {
   const [user, setUser] = useState("");
   const [validName, setValidName] = useState(false);
   const [userFocus, setUserFocus] = useState(false);
+
+  const [email, setEmail] = useState("");
+  const [validEmail, setValidEmail] = useState(false);
+  const [emailFocus, setEmailFocus] = useState(false);
 
   const [pwd, setPwd] = useState("");
   const [validPwd, setValidPwd] = useState(false);
@@ -32,15 +66,16 @@ const Register = () => {
 
   useEffect(() => {
     const result = USER_REGEX.test(user);
-    console.log(result);
-    console.log(user);
     setValidName(result);
   }, [user]);
 
   useEffect(() => {
+    const result = EMAIL_REGEX.test(email);
+    setValidEmail(result);
+  }, [email]);
+
+  useEffect(() => {
     const result = PWD_REGEX.test(pwd);
-    console.log(result);
-    console.log(pwd);
     setValidPwd(result);
     const match = pwd === matchPwd;
     setValidMatchPwd(match);
@@ -54,17 +89,38 @@ const Register = () => {
     e.preventDefault();
 
     const v1 = USER_REGEX.test(user);
-    const v2 = PWD_REGEX.test(pwd);
-    const v3 = pwd === matchPwd;
-    if (!v1 || !v2 || !v3) {
+    const v2 = EMAIL_REGEX.test(email);
+    const v3 = PWD_REGEX.test(pwd);
+    const v4 = pwd === matchPwd;
+
+    if (!v1 || !v2 || !v3 || !v4) {
       setErrMsg("Invalid Entry!");
       if (errRef.current) {
         errRef.current.focus();
       }
       return;
     }
+    const payload: RegisterPayload = { username: user, email, password: pwd };
     try {
-    } catch (error) {}
+      const response = await fetch(`http://localhost:5000/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error(`Http error! status: ${response.status}`);
+      }
+      const data: RegisterResponse = await response.json();
+      console.log("Register successful:", data);
+      if (data.success && data.token) {
+        localStorage.setItem("token", data.token);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -125,6 +181,50 @@ const Register = () => {
             4 to 24 characters. <br />
             Must begin with a letter. <br />
             Letters, numbers, underscores, hyphens allowed.
+          </p>
+        </div>
+
+        {/* {Email} */}
+        <div className=" w-full">
+          <label
+            htmlFor="email"
+            className="flex items-center  text-[#CAAA98] bg-red0 gap-1"
+          >
+            Email:
+            <span
+              className={`${validEmail ? "valid text-[#0D0B61]" : "hide hidden"}`}
+            >
+              <FaCheck />
+            </span>
+            <span
+              className={
+                validEmail || !email ? "hide hidden" : "invalid text-[#D62828]"
+              }
+            >
+              <FaTimes />
+            </span>
+          </label>
+          <input
+            type="text"
+            id="email"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="off"
+            onFocus={() => setEmailFocus(true)}
+            onBlur={() => setEmailFocus(false)}
+            aria-invalid={validEmail ? "false" : "true"}
+            aria-describedby="emailnote"
+            className=" focus:outline-1 w-full focus:outline-[#9A8678] border text-[#CAAA98] px-2 py-2 rounded-lg"
+          />
+          <p
+            id="emailnote"
+            className={`${emailFocus && email && !validEmail ? "instructions text-[#CAAA98] bg-[#202940] px-4 py-2 mt-2 rounded-lg  " : "offscreen hidden"}`}
+          >
+            <FiInfo />
+            Enter a valid email address (e.g., name@example.com).
+            <br />
+            Allowed characters: letters, numbers, dots, and hyphens before the @
+            symbol.
           </p>
         </div>
 
@@ -221,7 +321,7 @@ const Register = () => {
         <div className=" w-full">
           <button
             className="w-full rounded-lg font-bold text-lg cursor-pointer disabled:bg-gray-600 disabled:cursor-not-allowed bg-[#1A1953] text-[#CAAA98] py-2 mt-4"
-            disabled={!validName || !validPwd || !validMatchPwd}
+            disabled={!validName || !validEmail || !validPwd || !validMatchPwd}
           >
             Sign up
           </button>
