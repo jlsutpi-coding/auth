@@ -1,5 +1,5 @@
 {
-  "name": "auth",
+  "name": "auth-node-claude",
   "private": true,
   "version": "0.0.0",
   "type": "module",
