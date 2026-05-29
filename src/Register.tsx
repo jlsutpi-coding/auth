@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { FiInfo } from "react-icons/fi";
+
+import AuthContext from "./context/AuthProvider";
+
+import baseUrl from "./api/api";
+
+import type { User } from "./types/user";
 
 const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -11,22 +17,6 @@ interface RegisterPayload {
   username: string;
   email: string;
   password: string;
-}
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  created_at: string; // ISO date string
-  updated_at: string;
-  last_login_at: string | null;
-  is_active: 0 | 1; // or boolean, depending on your DB
-  is_verified: 0 | 1;
-  role: "user" | "admin"; // adjust as needed
-  facebook_id: string | null;
-  google_id: string | null;
 }
 
 interface RegisterResponse {
@@ -57,6 +47,10 @@ const Register = () => {
   const [matchPwdFocus, setMatchPwdFocus] = useState(false);
 
   const [errMsg, setErrMsg] = useState("");
+  const context = useContext(AuthContext);
+  if (!context) return;
+
+  const { setAuth } = context;
 
   useEffect(() => {
     if (userRef.current) {
@@ -85,7 +79,7 @@ const Register = () => {
     setErrMsg("");
   }, [user, pwd, matchPwd]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const v1 = USER_REGEX.test(user);
@@ -102,7 +96,7 @@ const Register = () => {
     }
     const payload: RegisterPayload = { username: user, email, password: pwd };
     try {
-      const response = await fetch(`http://localhost:5000/auth/register`, {
+      const response = await fetch(`${baseUrl}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -118,6 +112,7 @@ const Register = () => {
       if (data.success && data.token) {
         localStorage.setItem("token", data.token);
       }
+      setAuth({ user: data.user, accessToken: data.token });
     } catch (error) {
       console.log(error);
     }
