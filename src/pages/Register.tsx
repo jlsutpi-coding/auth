@@ -2,12 +2,11 @@ import { useContext, useEffect, useRef, useState } from "react";
 
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { FiInfo } from "react-icons/fi";
+import type { User } from "../types/user";
+import AuthContext from "../context/AuthProvider";
+import baseUrl from "../api/api";
 
-import AuthContext from "./context/AuthProvider";
 
-import baseUrl from "./api/api";
-
-import type { User } from "./types/user";
 
 const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;

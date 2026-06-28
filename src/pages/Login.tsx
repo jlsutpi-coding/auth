@@ -1,9 +1,10 @@
 import { useContext, useEffect, useRef, useState } from "react";
 
 import { FaTimes } from "react-icons/fa";
-import AuthContext from "./context/AuthProvider";
-import baseUrl from "./api/api";
-import type { User } from "./types/user";
+
+import type { User } from "../types/user";
+import AuthContext from "../context/AuthProvider";
+import baseUrl from "../api/api";
 
 interface LoginPayload {
   login: string;
@@ -14,7 +15,8 @@ interface LoginResponse {
   message: string;
   success: boolean;
   token?: string;
-  user?: User;
+  user?: User
+  ;
 }
 
 const LOGIN_URL = "auth/login";
